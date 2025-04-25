@@ -1,110 +1,61 @@
 #include <iostream>
-#include <fstream>
-#include <deque>
-#include <list>
-#include <algorithm>
+#include <cmath>
 #include <string>
 
-class BankDeposit {
-private:
-    std::string name;
-    double amount;
-    std::string currency;
-    double percent;
+using namespace std;
+class MyException : public invalid_argument {
+    double a, b, c;
 
 public:
-    BankDeposit() : name(""), amount(0), currency(""), percent(0) {}
+    MyException(double a, double b, double c, double D, const string& message): invalid_argument(message), a(a), b(b), c(c) {}
 
-    BankDeposit(const std::string &n, double a, const std::string &c, double ir)
-            : name(n), amount(a), currency(c), percent(ir) {}
-
-    BankDeposit(const BankDeposit &other)
-            : name(other.name), amount(other.amount), currency(other.currency), percent(other.percent) {}
-
-    BankDeposit(BankDeposit &&other)
-            : name(std::move(other.name)), amount(other.amount), currency(std::move(other.currency)), percent(other.percent) {
-        other.amount = 0;
-        other.percent = 0;
-        other.name = "";
-        other.currency = "";
+    void print() const {
+        cout << what() << endl;
+        cout  << a << "x^2 + " << b << "x + " << c << " = 0  have no roots" << endl;
     }
+};
 
-    BankDeposit &operator=(const BankDeposit &other) {
-        if (this != &other) {
-            name = other.name;
-            amount = other.amount;
-            currency = other.currency;
-            percent = other.percent;
+class Quadratic {
+    double a, b, c;
+
+public:
+    Quadratic(double a, double b, double c) : a(a), b(b), c(c) {}
+
+    pair<double, double> solve() const {
+        double discriminant = b * b - 4 * a * c;
+
+        if (discriminant < 0) {
+            throw MyException(a, b, c, discriminant,"critical failure");
         }
-        return *this;
+        double x1 = (-b + sqrt(discriminant)) / (2 * a);
+        double x2 = (-b - sqrt(discriminant)) / (2 * a);
+
+        return make_pair(x1, x2);
     }
 
-    BankDeposit &operator=(BankDeposit &&other) {
-        if (this != &other) {
-            name = std::move(other.name);
-            amount = other.amount;
-            currency = std::move(other.currency);
-            percent = other.percent;
-            other.name = "";
-            other.currency = "";
-            other.amount = 0;
-            other.percent = 0;
-        }
-        return *this;
-    }
-
-    friend std::ostream &operator<<(std::ostream &os, const BankDeposit &deposit) {
-        os << "Name: " << deposit.name << ", Amount: " << deposit.amount
-           << " " << deposit.currency << ", Percent: " << deposit.percent << "%";
-        return os;
-    }
-    bool operator<(const BankDeposit &other) const {
-        return name < other.name;
+    void print() const {
+        cout << a << "x^2 + " << b << "x + " << c << " = 0\n";
     }
 };
 
 int main() {
-    std::ifstream input("input.txt");
-    if (!input) {
-        std::cerr << "Cannot open input file" << std::endl;
-        return 1;
+    try {
+        Quadratic eq0(1, -5, 6);
+        eq0.print();
+
+        auto roots0 = eq0.solve();
+        cout << "x1 = " << roots0.first<< ", x2 = " << roots0.second << "\n\n";
+
+        Quadratic eq1(4, -5, 6);
+        eq1.print();
+
+        auto roots1 = eq1.solve();
+        cout << "x1 = " << roots1.first<< ", x2 = " << roots1.second << "\n\n";
     }
-
-    std::deque<BankDeposit> deposits;
-    std::string name, currency;
-    double amount, rate;
-
-    while (input >> name >> amount >> currency >> rate) {
-        deposits.emplace_back(name, amount, currency, rate);
+    catch (MyException& e) {
+        cerr << "Exception: " << e.what() << endl;
+        e.print();
     }
-    input.close();
-
-    std::ofstream output("output.txt");
-    output << "Start deque:" << std::endl;
-    for (const auto &dep: deposits) {
-        output << dep << std::endl;
-    }
-
-    std::sort(deposits.begin(), deposits.end());
-    output << "\nSorted deque:" << std::endl;
-    for (const auto &dep: deposits) {
-        output << dep << std::endl;
-    }
-
-    std::list<BankDeposit> depositList;
-    std::copy(deposits.begin(), deposits.end(), std::back_inserter(depositList));
-
-    depositList.sort();
-
-    output << "\nCopied and sorted list:" << std::endl;
-    for (const auto &dep: depositList) {
-        output << dep << std::endl;
-    }
-
-    output.close();
-
-    BankDeposit bD1("bD1111", 1000, "Rub", 5.0);
-    BankDeposit moved(std::move(bD1));
 
     return 0;
 }
